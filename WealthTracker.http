@@ -1,0 +1,6 @@
+@WealthTracker_HostAddress = http://localhost:5043
+
+GET {{WealthTracker_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
