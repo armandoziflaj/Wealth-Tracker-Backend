@@ -8,29 +8,19 @@ namespace WealthTracker.Controllers;
 [Route("api/[controller]")]
 public class BaseController : ControllerBase
 {
-    protected IActionResult CreateSuccessResponse<T>(T data)
-    {
-        var response = new BaseResponse<T>
-        {
-            Data = data,
-            IsSuccess = true,
-            Errors = []
-        };
-        return Ok(response);
-    }
+    protected IActionResult Success<T>(T data) 
+        => Ok(BaseResponse<T>.Success(data));
+    
 
-    protected IActionResult CreateErrorResponse<T>(List<string> errors, String message, int statusCode = 400)
-    {
-        var response = new BaseResponse<T>
-        {
-            Data = default,
-            IsSuccess = false,
-            Message = message, 
-            Errors = errors
-        };
-        return StatusCode(statusCode, response);
-    }
-    public long GetUserId()
+    protected IActionResult BadRequest(string error, int statusCode = 400) 
+        => StatusCode(statusCode, BaseResponse<object>.Failure(error));
+    protected IActionResult NotFound(string error, int statusCode = 404) 
+        => StatusCode(statusCode, BaseResponse<object>.Failure(error));
+
+    protected IActionResult Invalid(string error = "Unauthorized") 
+        => StatusCode(401, BaseResponse<object>.Failure(error));
+    [NonAction]
+    protected long GetUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     

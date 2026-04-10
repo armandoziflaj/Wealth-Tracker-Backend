@@ -10,15 +10,15 @@ namespace WealthTracker.Services;
 
 public class AuthService(ApplicationDbContext context, IConfiguration config) : IAuthService
 {
-    public async Task<string?> LoginAsync(string email, string password)
+    public async Task<string?> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
         var user = await context.Users
-            .FirstOrDefaultAsync(u => u.Email == email && u.Password == password);
+            .FirstOrDefaultAsync(u => u.Email == email && u.Password == password,cancellationToken);
         
         return user == null ? null : GenerateJwtToken(user);
     }
 
-    public async Task<string?> RegisterAsync(RegisterRequest request)
+    public async Task<string?> RegisterAsync(RegisterRequest request,  CancellationToken cancellationToken = default)
     {
         var alreadyExists = await context.Users.AnyAsync(u => u.Email == request.Email);
         if (alreadyExists) return null;
@@ -30,7 +30,7 @@ public class AuthService(ApplicationDbContext context, IConfiguration config) : 
             Password = request.Password,
         }; 
         context.Users.Add(newUser);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
         return GenerateJwtToken(newUser);
     }
 

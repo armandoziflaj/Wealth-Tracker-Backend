@@ -13,15 +13,13 @@ public class Category : CommonData
 
     [Required]
     public TransactionType Type { get; set; } 
-
-    [MaxLength(1000)]
-    public string? Icon { get; set; }  
+    
     [MaxLength(100)]
     public string? Color { get; set; } 
 
     public long UserId { get; set; }
     [ForeignKey("UserId")]
-    public User? User { get; set; } = null!;
+    public User? User { get; set; }
     
     public ICollection<Transaction> Transactions { get; set; } = [];
 }

@@ -9,8 +9,6 @@ public abstract class CommonData
     [Required]
     public DateTime CreatedOn { get; set; } =  DateTime.UtcNow;
     public DateTime? UpdatedOn { get; set; }
-    public bool IsDeleted { get; set; } = false;
-    [Required]
-    public string CreatedByUserId { get; set; } = string.Empty;
+    
     public uint RowVersion { get; set; } 
 }

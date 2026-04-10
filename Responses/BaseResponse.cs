@@ -2,23 +2,29 @@ namespace WealthTracker.Responses;
 
 public class BaseResponse<T>
 {
+    public bool IsSuccess { get; init; }
     public T? Data { get; set; }
     public List<string> Errors { get; set; } = [];
-    public bool IsSuccess { get; set; }
-    public string? Message { get; set; }
 
-    public BaseResponse(T data, string? message = null)
+    public BaseResponse() { }
+
+    public static BaseResponse<T> Success(T? data) => new()
     {
-        IsSuccess = true;
-        Data = data;
-        Message = message;
-    }
+        IsSuccess = true,
+        Data = data,
+    };
 
-    public BaseResponse(List<string> errors)
+    public static BaseResponse<T> Failure(string error) => new()
     {
-        IsSuccess = false;
-        Errors = errors;
-    }
+        IsSuccess = false,
+        Errors = [error],
+    };
 
-    public BaseResponse() { } 
+    public static BaseResponse<T> Failure(List<string> errors) => new()
+    {
+        IsSuccess = false,
+        Errors = errors,
+    };
+    public static implicit operator BaseResponse<T>(T data) => Success(data);
+    public static implicit operator BaseResponse<T>(string error) => Failure(error);
 }

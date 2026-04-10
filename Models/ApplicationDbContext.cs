@@ -36,6 +36,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .WithOne(c => c.User)
             .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+        
+        modelBuilder.Entity<Category>()
+            .HasIndex(c => new { c.UserId, c.Color })
+            .IsUnique();
     }
     public override int SaveChanges()
     {

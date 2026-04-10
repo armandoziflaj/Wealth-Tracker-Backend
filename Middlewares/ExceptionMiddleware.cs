@@ -21,8 +21,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
             var response = new BaseResponse<string>
             {
                 IsSuccess = false,
-                Errors = [env.IsDevelopment() ? ex.ToString() : "Internal Server Error"],
-                Message = "An unexpected error occurred."
+                Errors = [env.IsDevelopment() ? ex.Message : "Internal Server Error"],
             };
 
             var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
