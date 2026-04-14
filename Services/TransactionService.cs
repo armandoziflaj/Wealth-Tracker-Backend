@@ -41,9 +41,9 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
                 IsRecurring = transaction.IsRecurring,
                 Notes = transaction.Notes,
                 UserId = userId,
-                CreatedOn = DateTime.UtcNow,
-                UpdatedOn = DateTime.UtcNow
+                RecursionTime = transaction.RecursionTime
             };
+        newTransaction.SetupNextOccurrence();
         try
         {
             context.Transactions.Add(newTransaction);
@@ -70,7 +70,9 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
         existingTransaction.Notes = dto.Notes;
         existingTransaction.IsRecurring = dto.IsRecurring;
         existingTransaction.UpdatedOn = DateTime.UtcNow; 
-
+        existingTransaction.RecursionTime = dto.RecursionTime;
+        existingTransaction.SetupNextOccurrence();
+        
         try
         {
             await context.SaveChangesAsync(cancellationToken);

@@ -29,7 +29,7 @@ public class CategorySummaryDto
 }
 public class DashboardDataDto 
 {
-    public IEnumerable<CategorySummaryDto> ProtocolFlow { get; set; } 
-    public IEnumerable<CategorySummaryDto> CategoryExpenseAllocation { get; set; } 
-    public IEnumerable<CategorySummaryDto> CategoryIncomeAllocation { get; set; } 
+    public required IEnumerable<CategorySummaryDto> ProtocolFlow { get; set; } 
+    public required IEnumerable<CategorySummaryDto> CategoryExpenseAllocation { get; set; } 
+    public required IEnumerable<CategorySummaryDto> CategoryIncomeAllocation { get; set; } 
 }

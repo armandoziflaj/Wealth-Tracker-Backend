@@ -23,6 +23,7 @@ public class TransactionCreateDto
     public long CategoryId { get; set; }
     public string Notes {get; set;} = string.Empty;
     public bool IsRecurring { get; set; }
+    public RecursionType RecursionTime { get; set; }
 }
 
 public class TransactionUpdateDto : TransactionCreateDto

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Provider name="Transactions">
+    <Identification>Transaction</Identification>
+    <Table>Transactions</Table>
+    <DataRow>5</DataRow>
+    <HeaderRow>3</HeaderRow>
+    <Entity>
+        <Column> 
+            <PropertyName>TransactionDate</PropertyName>
+            <TargetType>datetime</TargetType>
+            <Format>dd/MM/yyyy hh:mm:ss tt</Format>
+        </Column>
+        <Column > 
+            <PropertyName>CategoryId</PropertyName>
+            <TargetType>int</TargetType>
+        </Column>
+        <Column >
+            <PropertyName>UserId</PropertyName>
+            <TargetType>int</TargetType>
+        </Column>
+        <Column >
+            <PropertyName>Description</PropertyName>
+            <TargetType>string</TargetType>
+        </Column>
+        <Column >
+            <PropertyName>Type</PropertyName>
+            <TargetType>int</TargetType>
+            <Expression>[Amount] > 0 ? 1 : 0</Expression>
+        </Column>
+        <Column > 
+            <PropertyName>Amount</PropertyName>
+            <TargetType>decimal</TargetType>
+        </Column>
+        <Column > 
+            <PropertyName>IsRecurring</PropertyName>
+            <TargetType>bool</TargetType>
+        </Column>
+    </Entity>
+</Provider>

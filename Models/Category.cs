@@ -5,7 +5,7 @@ namespace WealthTracker.Models;
 using System.ComponentModel.DataAnnotations;
 
 [Table("Categories")]
-public class Category : CommonData
+public class Category : CommonDataWithUser
 {
     [Required]
     [StringLength(50)]
@@ -16,10 +16,6 @@ public class Category : CommonData
     
     [MaxLength(100)]
     public string? Color { get; set; } 
-
-    public long UserId { get; set; }
-    [ForeignKey("UserId")]
-    public User? User { get; set; }
     
     public ICollection<Transaction> Transactions { get; set; } = [];
 }
