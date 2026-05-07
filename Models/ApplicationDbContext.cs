@@ -37,6 +37,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Restrict);
         
+        modelBuilder.Entity<User>()
+            .Property(u => u.Email)
+            .HasConversion(
+                v => v.ToUpperInvariant(),
+                v => v                     
+            );
         modelBuilder.Entity<Category>()
             .HasIndex(c => new { c.UserId, c.Color })
             .IsUnique();

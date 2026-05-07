@@ -6,7 +6,6 @@ using WealthTracker.Middlewares;
 using WealthTracker.Models;
 using WealthTracker.Services;
 using Scalar.AspNetCore;
-using WealthTracker.FileIntegration;
 using WealthTracker.Responses;
 using WealthTracker.Workers;
 
@@ -14,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddApplicationServices();
-builder.Services.AddScoped<FileService>();
+builder.Services.AddHttpClient<IFileService, FileService>();
 builder.Services.AddHostedService<RecurringTransactionWorker>();
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>

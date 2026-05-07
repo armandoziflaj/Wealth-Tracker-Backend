@@ -1,0 +1,51 @@
+@startuml
+autonumber
+
+Actor User
+Participant "Frontend (React)" as Frontend
+Participant "Web API (Controllers)" as API
+Participant "Business Logic (Services)" as BusinessLogic
+Database "PostgreSQL" as Database
+
+User -> Frontend: Initiates Transaction CRUD (Create/Read/Update/Delete)
+
+alt Create Transaction
+    Frontend -> API: POST/transactions (Transaction Data)
+    API -> BusinessLogic: Call createTransaction service (Transaction Data)
+    BusinessLogic -> Database: Insert new transaction record
+    Database --> BusinessLogic: New transaction ID
+    BusinessLogic --> API: Success / New Transaction Object
+    API --> Frontend: Success / New Transaction Object
+    Frontend --> User: Confirmation / Updated list
+else Read Transactions (List/Detail)
+    Frontend -> API: GET /transactions or /transactions/{id} (Optional Filters)
+    API -> BusinessLogic: Call getTransactions/getTransactionById service (Filters)
+    BusinessLogic -> Database: Query transaction records
+    Database --> BusinessLogic: Transaction(s) data
+    BusinessLogic --> API: Transaction(s) data
+    API --> Frontend: Transaction(s) data (JSON)
+    Frontend --> User: Displays transaction(s)
+else Update Transaction
+    Frontend -> API: PUT /transactions/{id} (Updated Transaction Data)
+    API -> BusinessLogic: Call updateTransaction service (ID, Updated Data)
+    BusinessLogic -> Database: Update transaction record by ID
+    Database --> BusinessLogic: Success / Updated Transaction Object
+    BusinessLogic --> API: Success / Updated Transaction Object
+    API --> Frontend: Success / Updated Transaction Object
+    Frontend --> User: Confirmation / Updated list
+else Delete Transaction
+    Frontend -> API: DELETE /transactions/{id}
+    API -> BusinessLogic: Call deleteTransaction service (ID)
+    BusinessLogic -> Database: Delete transaction record by ID
+    Database --> BusinessLogic: Success
+    BusinessLogic --> API: Success
+    API --> Frontend: Success message
+    Frontend --> User: Confirmation / Updated list
+end
+
+alt Operation Failed
+    API --> Frontend: Error message (e.g., Validation error, Not found, Server error)
+    Frontend --> User: Displays Error message
+end
+
+@enduml

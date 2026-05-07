@@ -1,3 +1,4 @@
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Mvc;
 using WealthTracker.Models;
 using WealthTracker.Requests;
@@ -27,6 +28,15 @@ public class AuthController(IAuthService authService) : BaseController
         var token = await authService.LoginAsync(request.Email, request.Password, cancellationToken);
         
         return token == null ? Invalid( "Invalid email or password") 
+                             : Success(new { Token = token });
+    }
+    
+    [HttpPost("google-login")]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+    {
+        var token = await authService.LoginGoogle(request.GoogleToken);
+
+        return token == null ? Invalid( "Login Failed") 
                              : Success(new { Token = token });
     }
 }

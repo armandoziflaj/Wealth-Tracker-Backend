@@ -1,0 +1,27 @@
+@startuml
+autonumber
+
+Actor User
+Participant "Frontend (React)" as Frontend
+Participant "Web API (Controllers)" as API
+Participant "Business Logic (Services)" as BusinessLogic
+Participant "External Systems (AI/FS)" as ExternalAI
+
+User -> Frontend: Uploads Receipt Image
+Frontend -> API: POST /transactions/upload/receipt (Image File)
+
+alt Successful Receipt Scan
+    API -> BusinessLogic: Call scanReceipt service (Image File)
+    BusinessLogic -> ExternalAI: Send image to Gemini for analysis
+    ExternalAI --> BusinessLogic: Extracted transaction data (e.g., amount, date, vendor)
+    BusinessLogic -> BusinessLogic: Attempt to resolve category based on vendor/description
+    BusinessLogic --> API: Processed transaction data (with suggested category)
+    API --> Frontend: Transaction data (JSON)
+    Frontend -> User: Displays pre-filled transaction form for confirmation
+    User -> Frontend : Saves or deletes transaction / transaction flow
+else Receipt Scan Failed
+    API --> Frontend: Error message (e.g., Image unreadable, AI service error)
+    Frontend --> User: Displays Error message
+end
+
+@enduml

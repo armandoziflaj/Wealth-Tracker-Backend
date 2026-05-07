@@ -1,0 +1,19 @@
+@startuml
+autonumber
+actor "User" as User
+
+participant "Frontend (React)" as Frontend
+participant "Web API (Controllers)" as API
+participant "Business Logic (Services)" as Services
+database "PostgreSQL" as DB
+
+User -> Frontend: Submits Login/Register form
+Frontend -> API: POST /api/auth/login or /api/auth/register
+API -> Services: Calls AuthService for login/registration
+Services -> DB: Verifies credentials or creates new user
+DB --> Services: Returns user data or success/failure
+Services --> API: Returns JWT or registration result
+API --> Frontend: Sends JWT or confirmation
+Frontend --> User: Redirects to dashboard or shows error
+
+@enduml

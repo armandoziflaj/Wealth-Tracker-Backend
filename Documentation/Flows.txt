@@ -1,0 +1,248 @@
+# Backend Flows
+
+## 1. Identity System: Ροές στο AuthController και AuthService
+
+### 1.1. Ροή Σύνδεσης (Login)
+1. Ο χρήστης στέλνει αίτημα σύνδεσης (username/email και κωδικό πρόσβασης) στο AuthController.
+2. Το AuthController καλεί τη μέθοδο σύνδεσης του AuthService, περνώντας τα διαπιστευτήρια.
+3. Το AuthService ανακτά τα στοιχεία του χρήστη από τη βάση δεδομένων με βάση το username/email.
+4. Η βάση δεδομένων επιστρέφει τα στοιχεία του χρήστη (συμπεριλαμβανομένου του hashed κωδικού πρόσβασης) στο AuthService.
+5. Το AuthService επαληθεύει τον παρεχόμενο κωδικό πρόσβασης έναντι του αποθηκευμένου hashed κωδικού.
+6. Εάν τα διαπιστευτήρια είναι έγκυρα, το AuthService δημιουργεί ένα JSON Web Token (JWT).
+7. Το AuthService επιστρέφει το JWT στο AuthController.
+8. Το AuthController επιστρέφει το JWT στον χρήστη ως απάντηση.
+
+### 1.2. Ροή Εγγραφής (Register)
+1. Ο χρήστης στέλνει αίτημα εγγραφής (π.χ., username, email, κωδικό πρόσβασης) στο AuthController.
+2. Το AuthController καλεί τη μέθοδο εγγραφής του AuthService, περνώντας τα δεδομένα εγγραφής.
+3. Το AuthService επικυρώνει τα δεδομένα (π.χ., μοναδικότητα username/email).
+4. Το AuthService hashes τον κωδικό πρόσβασης και δημιουργεί ένα νέο αρχείο χρήστη στη βάση δεδομένων.
+5. Η βάση δεδομένων αποθηκεύει τον νέο χρήστη και επιστρέφει επιβεβαίωση στο AuthService.
+6. Το AuthService μπορεί να δημιουργήσει ένα JWT για τον νέο χρήστη.
+7. Το AuthService επιστρέφει επιβεβαίωση εγγραφής (και ενδεχομένως το JWT) στο AuthController.
+8. Το AuthController επιστρέφει την επιβεβαίωση (και ενδεχομένως το JWT) στον χρήστη.
+
+### 1.3. Ροή Επικύρωσης JWT (JWT Validation)
+1. Ο χρήστης στέλνει ένα αίτημα σε μια προστατευμένη διαδρομή (endpoint) οποιουδήποτε Controller, συμπεριλαμβάνοντας το JWT στην κεφαλίδα εξουσιοδότησης.
+2. Το ASP.NET Core Authentication Middleware αναχαιτίζει το αίτημα.
+3. Το Middleware αποκωδικοποιεί το JWT, επαληθεύει την υπογραφή, την ημερομηνία λήξης και άλλες απαιτήσεις.
+4. Εάν το JWT είναι έγκυρο, το Middleware εξάγει τις αξιώσεις (claims) του χρήστη (π.χ., User ID) και τις προσθέτει στο HttpContext.User.
+5. Το αίτημα προχωρά στην αντίστοιχη μέθοδο του Controller (π.χ., FileController.Import).
+6. Η μέθοδος του Controller (ή μια μέθοδος βάσης όπως το GetUserId()) ανακτά το User ID από το HttpContext.User.
+7. Εάν το JWT είναι άκυρο, το Middleware απορρίπτει το αίτημα με σφάλμα (π.χ., 401 Unauthorized) πριν φτάσει στον Controller.
+
+## 2. Transaction Engine: Ροές στο TransactionController και TransactionService
+
+### 2.1. Ροή Ανάκτησης Συναλλαγών (Fetch)
+1. Ο χρήστης στέλνει αίτημα για ανάκτηση συναλλαγών (ενδεχομένως με φίλτρα) στο TransactionController.
+2. Το TransactionController καλεί τη μέθοδο ανάκτησης του TransactionService, περνώντας τα φίλτρα και το User ID.
+3. Το TransactionService κατασκευάζει ένα ερώτημα για τη βάση δεδομένων, εφαρμόζοντας τα φίλτρα και περιορίζοντας τις συναλλαγές στον συγκεκριμένο χρήστη.
+4. Η βάση δεδομένων εκτελεί το ερώτημα και επιστρέφει τις αντίστοιχες συναλλαγές στο TransactionService.
+5. Το TransactionService επεξεργάζεται (π.χ., χαρτογραφεί σε DTOs) τις συναλλαγές.
+6. Το TransactionService επιστρέφει τις συναλλαγές στο TransactionController.
+7. Το TransactionController επιστρέφει τις συναλλαγές στον χρήστη.
+
+### 2.2. Ροή Δημιουργίας Συναλλαγής (Create)
+1. Ο χρήστης στέλνει δεδομένα νέας συναλλαγής στο TransactionController.
+2. Το TransactionController καλεί τη μέθοδο δημιουργίας του TransactionService, περνώντας τα δεδομένα και το User ID.
+3. Το TransactionService επικυρώνει τα δεδομένα της συναλλαγής (π.χ., έγκυρες κατηγορίες, λογαριασμοί).
+4. Το TransactionService δημιουργεί ένα νέο αρχείο συναλλαγής στη βάση δεδομένων.
+5. Η βάση δεδομένων αποθηκεύει τη συναλλαγή και επιστρέφει επιβεβαίωση (και ενδεχομένως το ID της νέας συναλλαγής) στο TransactionService.
+6. Το TransactionService επιστρέφει την επιβεβαίωση (και ενδεχομένως την πλήρη δημιουργημένη συναλλαγή) στο TransactionController.
+7. Το TransactionController επιστρέφει την επιβεβαίωση στον χρήστη.
+
+### 2.3. Ροή Ενημέρωσης Συναλλαγής (Update)
+1. Ο χρήστης στέλνει ενημερωμένα δεδομένα συναλλαγής (μαζί με το ID της) στο TransactionController.
+2. Το TransactionController καλεί τη μέθοδο ενημέρωσης του TransactionService, περνώντας τα δεδομένα και το User ID.
+3. Το TransactionService επικυρώνει τα δεδομένα και ανακτά την υπάρχουσα συναλλαγή από τη βάση δεδομένων για τον συγκεκριμένο χρήστη.
+4. Το TransactionService ενημερώνει το αρχείο της συναλλαγής στη βάση δεδομένων με τα νέα δεδομένα.
+5. Η βάση δεδομένων ενημερώνει τη συναλλαγή και επιστρέφει επιβεβαίωση στο TransactionService.
+6. Το TransactionService επιστρέφει την επιβεβαίωση (και ενδεχομένως την ενημερωμένη συναλλαγή) στο TransactionController.
+7. Το TransactionController επιστρέφει την επιβεβαίωση στον χρήστη.
+
+### 2.4. Ροή Διαγραφής Συναλλαγής (Delete)
+1. Ο χρήστης στέλνει αίτημα διαγραφής συναλλαγής (με το ID της) στο TransactionController.
+2. Το TransactionController καλεί τη μέθοδο διαγραφής του TransactionService, περνώντας το ID και το User ID.
+3. Το TransactionService επαληθεύει ότι η συναλλαγή ανήκει στον χρήστη και τη διαγράφει από τη βάση δεδομένων.
+4. Η βάση δεδομένων διαγράφει τη συναλλαγή και επιστρέφει επιβεβαίωση στο TransactionService.
+5. Το TransactionService επιστρέφει την επιβεβαίωση διαγραφής στο TransactionController.
+6. Το TransactionController επιστρέφει την επιβεβαίωση στον χρήστη.
+
+## 3. Category Management: Ροές στο CategoryController και CategoryService
+
+### 3.1. Ροή Ανάκτησης Κατηγοριών
+1. Ο χρήστης στέλνει αίτημα για ανάκτηση κατηγοριών στο CategoryController.
+2. Το CategoryController καλεί τη μέθοδο ανάκτησης του CategoryService, περνώντας το User ID.
+3. Το CategoryService κατασκευάζει ένα ερώτημα για τη βάση δεδομένων, περιορίζοντας τις κατηγορίες στον συγκεκριμένο χρήστη.
+4. Η βάση δεδομένων εκτελεί το ερώτημα και επιστρέφει τις αντίστοιχες κατηγορίες στο CategoryService.
+5. Το CategoryService επεξεργάζεται τις κατηγορίες.
+6. Το CategoryService επιστρέφει τις κατηγορίες στο CategoryController.
+7. Το CategoryController επιστρέφει τις κατηγορίες στον χρήστη.
+
+### 3.2. Ροή Δημιουργίας Κατηγορίας
+1. Ο χρήστης στέλνει δεδομένα νέας κατηγορίας στο CategoryController.
+2. Το CategoryController καλεί τη μέθοδο δημιουργίας του CategoryService, περνώντας τα δεδομένα και το User ID.
+3. Το CategoryService επικυρώνει τα δεδομένα της κατηγορίας (π.χ., μοναδικότητα ονόματος για τον χρήστη).
+4. Το CategoryService δημιουργεί ένα νέο αρχείο κατηγορίας στη βάση δεδομένων.
+5. Η βάση δεδομένων αποθηκεύει την κατηγορία και επιστρέφει επιβεβαίωση στο CategoryService.
+6. Το CategoryService επιστρέφει την επιβεβαίωση (και ενδεχομένως την πλήρη δημιουργημένη κατηγορία) στο CategoryController.
+7. Το CategoryController επιστρέφει την επιβεβαίωση στον χρήστη.
+
+### 3.3. Ροή Ενημέρωσης Κατηγορίας
+1. Ο χρήστης στέλνει ενημερωμένα δεδομένα κατηγορίας (μαζί με το ID της) στο CategoryController.
+2. Το CategoryController καλεί τη μέθοδο ενημέρωσης του CategoryService, περνώντας τα δεδομένα και το User ID.
+3. Το CategoryService επικυρώνει τα δεδομένα και ανακτά την υπάρχουσα κατηγορία από τη βάση δεδομένων για τον συγκεκριμένο χρήστη.
+4. Το CategoryService ενημερώνει το αρχείο της κατηγορίας στη βάση δεδομένων με τα νέα δεδομένα.
+5. Η βάση δεδομένων ενημερώνει την κατηγορία και επιστρέφει επιβεβαίωση στο CategoryService.
+6. Το CategoryService επιστρέφει την επιβεβαίωση (και ενδεχομένως την ενημερωμένη κατηγορία) στο CategoryController.
+7. Το CategoryController επιστρέφει την επιβεβαίωση στον χρήστη.
+
+### 3.4. Ροή Διαγραφής Κατηγορίας
+1. Ο χρήστης στέλνει αίτημα διαγραφής κατηγορίας (με το ID της) στο CategoryController.
+2. Το CategoryController καλεί τη μέθοδο διαγραφής του CategoryService, περνώντας το ID και το User ID.
+3. Το CategoryService επαληθεύει ότι η κατηγορία ανήκει στον χρήστη και τη διαγράφει από τη βάση δεδομένων.
+4. Η βάση δεδομένων διαγράφει την κατηγορία και επιστρέφει επιβεβαίωση στο CategoryService.
+5. Το CategoryService επιστρέφει την επιβεβαίωση διαγραφής στο CategoryController.
+6. Το CategoryController επιστρέφει την επιβεβαίωση στον χρήστη.
+
+## 4. File & AI Integration: Ροές στο FileController
+
+### 4.1. Ροή Εισαγωγής Excel (Excel Ingestion - Import)
+1. Ο χρήστης ανεβάζει ένα αρχείο Excel μέσω του FileController.Import endpoint.
+2. Το FileController ελέγχει αν το αρχείο είναι κενό. Αν είναι, επιστρέφει σφάλμα.
+3. Το FileController ανακτά το User ID του χρήστη που έχει συνδεθεί μέσω της μεθόδου GetUserId().
+4. Το FileController καλεί τη μέθοδο ParseExcelFile του IFileService, περνώντας το αρχείο και το User ID.
+5. Το IFileService.ParseExcelFile διαβάζει το περιεχόμενο του αρχείου Excel.
+6. Το IFileService.ParseExcelFile αναλύει τα δεδομένα του Excel (π.χ., γραμμές συναλλαγών).
+7. Κατά την ανάλυση, το IFileService.ParseExcelFile χρησιμοποιεί τη λογική ResolveIdAsync για να αντιστοιχίσει ή να δημιουργήσει IDs για οντότητες όπως κατηγορίες ή λογαριασμούς, κάνοντας ερωτήματα στη βάση δεδομένων.
+8. Εάν μια οντότητα δεν υπάρχει, το IFileService.ParseExcelFile μπορεί να την εισάγει στη βάση δεδομένων.
+9. Το IFileService.ParseExcelFile δημιουργεί νέα αρχεία συναλλαγών στη βάση δεδομένων με βάση τα αναλυμένα δεδομένα και τα επιλυμένα IDs.
+10. Η βάση δεδομένων αποθηκεύει τις νέες συναλλαγές και επιστρέφει επιβεβαίωση στο IFileService.
+11. Το IFileService επιστρέφει ένα αποτέλεσμα (π.χ., αριθμός εισαχθέντων συναλλαγών) στο FileController.
+12. Το FileController επιστρέφει μια απάντηση επιτυχίας στον χρήστη.
+
+### 4.2. Ροή Λήψης Προτύπου (Template Download - DownloadTemplate)
+1. Ο χρήστης στέλνει αίτημα για λήψη του προτύπου Excel μέσω του FileController.DownloadTemplate endpoint.
+2. Το FileController κατασκευάζει την πλήρη διαδρομή αρχείου για το πρότυπο Excel στον server.
+3. Το FileController ελέγχει αν το αρχείο υπάρχει στο σύστημα αρχείων του server.
+4. Εάν το αρχείο δεν βρεθεί, το FileController επιστρέφει μια απάντηση "Not Found" (404) στον χρήστη.
+5. Εάν το αρχείο βρεθεί, το FileController διαβάζει όλα τα bytes του αρχείου από το σύστημα αρχείων.
+6. Το FileController επιστρέφει τα bytes του αρχείου ως FileResult με τον κατάλληλο τύπο περιεχομένου (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet) και όνομα αρχείου στον χρήστη.
+
+### 4.3. Ροή Σάρωσης AI (AI Scan - PostAi)
+1. Ο χρήστης ανεβάζει ένα αρχείο (π.χ., απόδειξη, τραπεζική κίνηση) μέσω του FileController.PostAi endpoint.
+2. Το FileController ανακτά το User ID του χρήστη που έχει συνδεθεί μέσω της μεθόδου GetUserId().
+3. Το FileController καλεί τη μέθοδο AiService του IFileService, περνώντας το αρχείο και το User ID.
+4. Το IFileService.AiService προετοιμάζει το περιεχόμενο του αρχείου για αποστολή στο Gemini API.
+5. Το IFileService.AiService στέλνει το περιεχόμενο του αρχείου στο Gemini API για ανάλυση.
+6. Το Gemini API επεξεργάζεται το αρχείο (π.χ., OCR, εξαγωγή οντοτήτων, κατηγοριοποίηση) και επιστρέφει μια απάντηση.
+7. Το IFileService.AiService επεξεργάζεται την απάντηση από το Gemini API.
+8. Το IFileService.AiService μπορεί να χρησιμοποιήσει τα εξαγόμενα δεδομένα για να δημιουργήσει ή να ενημερώσει αρχεία (π.χ., συναλλαγές) στη βάση δεδομένων.
+9. Η βάση δεδομένων αποθηκεύει/ενημερώνει τα αρχεία και επιστρέφει επιβεβαίωση στο IFileService.
+10. Το IFileService επιστρέφει ένα αποτέλεσμα της AI ανάλυσης στο FileController.
+11. Το FileController επιστρέφει μια απάντηση επιτυχίας στον χρήστη.
+
+## 5. Background Tasks: Η λειτουργία του RecurringTransactionWorker
+
+### 5.1. Ροή Εκτέλεσης του RecurringTransactionWorker
+1. Ο RecurringTransactionWorker εκκινείται ως μια υπηρεσία παρασκηνίου (hosted service) στην εφαρμογή.
+2. Ο Worker περιμένει την προγραμματισμένη ώρα εκτέλεσης (π.χ., κάθε μέρα, κάθε μήνα).
+3. Όταν έρθει η ώρα, ο Worker ζητά από τη βάση δεδομένων όλες τις ορισμένες επαναλαμβανόμενες συναλλαγές που είναι προς εκτέλεση (δηλαδή, η επόμενη ημερομηνία εκτέλεσης είναι παρελθούσα ή τρέχουσα).
+4. Η βάση δεδομένων επιστρέφει τις επαναλαμβανόμενες συναλλαγές που πρέπει να εκτελεστούν στον Worker.
+5. Για κάθε επαναλαμβανόμενη συναλλαγή που ανακτήθηκε:
+   α. Ο Worker δημιουργεί ένα νέο αρχείο πραγματικής συναλλαγής στη βάση δεδομένων, βασισμένο στον ορισμό της επαναλαμβανόμενης συναλλαγής.
+   β. Ο Worker ενημερώνει τον ορισμό της επαναλαμβανόμενης συναλλαγής στη βάση δεδομένων (π.χ., ενημερώνει την LastExecutionDate και υπολογίζει την NextExecutionDate).
+6. Η βάση δεδομένων αποθηκεύει τις νέες πραγματικές συναλλαγές και ενημερώνει τους ορισμούς των επαναλαμβανόμενων συναλλαγών, επιστρέφοντας επιβεβαίωση στον Worker.
+7. Ο Worker καταγράφει την επιτυχή εκτέλεση ή τυχόν σφάλματα.
+8. Ο Worker επιστρέφει σε κατάσταση αναμονής μέχρι την επόμενη προγραμματισμένη εκτέλεση.
+
+---
+
+# Frontend Flows
+
+## 1. Auth Flows (Είσοδος & Ταυτοποίηση Χρήστη)
+
+Η ροή ταυτοποίησης είναι κρίσιμη για την ασφάλεια και την εμπειρία του χρήστη. Η αρχιτεκτονική μας διασφαλίζει ότι η λογική είναι απομονωμένη και επαναχρησιμοποιήσιμη.
+
+**Διαδρομή: User Action -> Component -> Hook -> API Request -> UI Update**
+
+1.  **User Action:** Ο χρήστης συμπληρώνει τα email και password στην `LoginPage` και πατάει το κουμπί "Login".
+2.  **Component (`LoginPage.tsx`):**
+    *   Το component διαχειρίζεται την κατάσταση της φόρμας (π.χ., μέσω `useState`).
+    *   Κατά το `onSubmit` της φόρμας, καλεί τη συνάρτηση `login` από το `useAuthentication` hook, περνώντας τα credentials του χρήστη.
+3.  **Hook (`useAuthentication.ts`):**
+    *   Αυτό το hook είναι ο "εγκέφαλος" της ταυτοποίησης.
+    *   Λαμβάνει τα credentials και καλεί την αντίστοιχη συνάρτηση από το API layer (π.χ., `api.auth.login(email, password)`).
+    *   Διαχειρίζεται την κατάσταση της διαδικασίας (`isLoading`, `error`).
+4.  **API Request (`src/api/apiFile.ts`):**
+    *   Η συνάρτηση `api.auth.login` εκτελεί ένα `POST` request στο endpoint του backend (π.χ., `/api/v1/auth/login`) με τα δεδομένα του χρήστη στο σώμα του request.
+5.  **UI Update:**
+    *   **Επιτυχία:** Το backend επιστρέφει ένα JWT token και τα δεδομένα του χρήστη.
+        *   Το `useAuthentication` hook λαμβάνει την απάντηση.
+        *   Καλεί τη συνάρτηση `setUser` από το `AuthContext` για να αποθηκεύσει τα δεδομένα του χρήστη καθολικά.
+        *   Αποθηκεύει το token (π.χ., σε `localStorage` ή `cookie`).
+        *   Πραγματοποιεί ανακατεύθυνση (redirect) του χρήστη στο `DashboardPage`.
+    *   **Αποτυχία:** Το backend επιστρέφει ένα σφάλμα (π.χ., 401 Unauthorized).
+        *   Το `useAuthentication` hook θέτει την κατάσταση `error` με το κατάλληλο μήνυμα.
+        *   Το `LoginPage` component διαβάζει την κατάσταση `error` και εμφανίζει ένα μήνυμα στον χρήστη (π.χ., "Λάθος email ή κωδικός").
+
+## 2. Data Visualization (Εμφάνιση Δεδομένων)
+
+Αυτή η ροή αφορά τη φόρτωση και εμφάνιση δεδομένων από το backend, αφού ο χρήστης έχει συνδεθεί.
+
+**Διαδρομή: User Action -> Component -> Hook -> API Request -> UI Update**
+
+1.  **User Action:** Ο χρήστης πλοηγείται σε μια σελίδα που απαιτεί δεδομένα, όπως το `/dashboard` ή το `/transactions`.
+2.  **Component (`DashboardPage.tsx`, `TransactionsPage.tsx`):**
+    *   Μόλις το component γίνει mount, ένα `useEffect` hook ενεργοποιείται.
+    *   Μέσα στο `useEffect`, καλείται μια συνάρτηση από ένα εξειδικευμένο hook, όπως το `useFetchData` (ή `useTransactions`), για να ξεκινήσει η φόρτωση των δεδομένων.
+3.  **Hook (`useFetchData.ts`):**
+    *   Το hook αυτό διαχειρίζεται τον κύκλο ζωής της αίτησης: `loading`, `data`, `error`.
+    *   Θέτει αμέσως το `loading = true`.
+4.  **API Request (`src/api/apiFile.ts`):**
+    *   Το hook καλεί την κατάλληλη συνάρτηση του API layer (π.χ., `api.transactions.getAll()`).
+    *   Αυτή η συνάρτηση εκτελεί ένα `GET` request στο αντίστοιχο endpoint (π.χ., `/api/v1/transactions`), επισυνάπτοντας το JWT token στο `Authorization` header για ταυτοποίηση.
+5.  **UI Update:**
+    *   **Κατά τη φόρτωση:** Το component διαβάζει το `loading = true` από το hook και εμφανίζει ένα loading indicator (π.χ., spinner).
+    *   **Επιτυχία:** Το backend επιστρέφει τα δεδομένα (π.χ., μια λίστα συναλλαγών).
+        *   Το `useFetchData` hook λαμβάνει τα δεδομένα.
+        *   Ενημερώνει το `DataContext` με τα νέα δεδομένα.
+        *   Θέτει `loading = false`.
+        *   Τα components (`DashboardPage`, `TransactionsPage`) που "ακούνε" το `DataContext` λαμβάνουν τα νέα δεδομένα και επανα-αποδίδονται (re-render), περνώντας τα δεδομένα σε child components όπως `Chart` ή `Table` για να τα εμφανίσουν.
+    *   **Αποτυχία:** Το hook θέτει μια κατάσταση σφάλματος, και το UI εμφανίζει ένα μήνυμα σφάλματος.
+
+## 3. Ingestion Portal (Φόρτωση Αρχείου)
+
+Αυτή η ροή περιγράφει πώς ο χρήστης ανεβάζει ένα αρχείο για επεξεργασία από το backend.
+
+**Διαδρομή: User Action -> Component -> Hook -> API Request -> UI Update**
+
+1.  **User Action:** Ο χρήστης σύρει ένα αρχείο (π.χ., `.csv`) και το αφήνει μέσα στην περιοχή `DragDrop` της σελίδας `DataUpload`.
+2.  **Component (`DataUpload.tsx`):**
+    *   Το `DragDrop` component διαχειρίζεται τα DOM events (`onDrop`).
+    *   Όταν ο χρήστης αφήσει το αρχείο, το component λαμβάνει το `File` object.
+    *   Καλεί αμέσως μια συνάρτηση από το `useIngestFile` hook, περνώντας το αρχείο.
+3.  **Hook (`useIngestFile.ts`):**
+    *   Αυτό το hook αναλαμβάνει όλη τη λογική της μεταφόρτωσης.
+    *   Θέτει την κατάσταση σε `uploading`.
+    *   Δημιουργεί ένα `FormData` object και προσθέτει το αρχείο σε αυτό.
+4.  **API Request (`src/api/apiFile.ts`):**
+    *   Το hook καλεί μια συνάρτηση όπως `api.files.upload(formData)`.
+    *   Αυτή η συνάρτηση εκτελεί ένα `POST` request στο endpoint `/api/v1/ingest/upload`, στέλνοντας το `FormData` ως σώμα. Το header `Content-Type` θα είναι `multipart/form-data`.
+5.  **UI Update (Feedback UI):**
+    *   **Κατά τη μεταφόρτωση:** Το `DataUpload` component διαβάζει την κατάσταση `uploading` και εμφανίζει ένα progress bar ή ένα μήνυμα "Processing...".
+    *   **Επιτυχία:** Το backend επεξεργάζεται το αρχείο και επιστρέφει ένα μήνυμα επιτυχίας.
+        *   Το hook ενημερώνει την κατάστασή του σε `success`.
+        *   Το UI εμφανίζει ένα μήνυμα επιτυχίας ("Το αρχείο αναλύθηκε επιτυχώς!") και ίσως μια περίληψη των δεδομένων που εισήχθησαν.
+    *   **Αποτυχία:** Το backend επιστρέφει σφάλμα (π.χ., λάθος format αρχείου).
+        *   Το hook θέτει την κατάσταση `error` με το μήνυμα από το backend.
+        *   Το UI εμφανίζει ένα σαφές μήνυμα σφάλματος στον χρήστη, εξηγώντας τι πήγε στραβά.
+
+## 4. User Actions (Διάφορες Ενέργειες)
+
+### A. Λήψη Template
+1.  **User Action:** Ο χρήστης πατάει το `ZenButton` με την ετικέτα "Download Template".
+2.  **Component (`ZenButton` μέσα στη `DataUpload` σελίδα):** Το `onClick` event καλεί τη συνάρτηση `download` από το `useDownloadTemplate` hook.
+3.  **Hook (`useDownloadTemplate.ts`):** Το hook αναλαμβάνει τη λογική της λήψης.
+4.  **API Request (`src/api/apiFile.ts`):** Καλεί το `api.files.getTemplate()`, το οποίο κάνει `GET` request στο `/api/v1/templates/transactions`. Το backend επιστρέφει το αρχείο ως blob.
+5.  **UI Update:** Το hook δημιουργεί ένα προσωρινό URL για το blob (`URL.createObjectURL`) και προσομοιώνει ένα κλικ σε ένα κρυφό `<a>` tag για να ξεκινήσει η λήψη του αρχείου από τον browser. Το UI δεν αλλάζει, αλλά ο χρήστης λαμβάνει το αρχείο.

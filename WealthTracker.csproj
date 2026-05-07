@@ -7,7 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
         <PackageReference Include="ExcelDataReader" Version="3.8.0" />
+        <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
@@ -26,6 +28,9 @@
     <ItemGroup>
         <None Update="Metadata\Transactions.xml">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="FileIntegration\Transactions.xlsx">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
     <ItemGroup>

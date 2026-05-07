@@ -3,7 +3,7 @@ using WealthTracker.Models;
 
 namespace WealthTracker.Requests;
 
-public class TransactionFilterDto
+public class TransactionFilterDto : PaginatedRequest
 {
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
@@ -20,7 +20,7 @@ public class TransactionCreateDto
     public string Description { get; set; } = string.Empty;
     public DateTime TransactionDate { get; set; }
     public TransactionType Type { get; set; }
-    public long CategoryId { get; set; }
+    public long? CategoryId { get; set; }
     public string Notes {get; set;} = string.Empty;
     public bool IsRecurring { get; set; }
     public RecursionType RecursionTime { get; set; }

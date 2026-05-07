@@ -2,6 +2,6 @@ namespace WealthTracker.Requests;
 
 public class PaginatedRequest
 {
-    public long PageNumber  { get; set; }
-    public long PageSize { get; set; } 
+    public int PageNumber  { get; set; }
+    public int PageSize { get; set; } 
 }

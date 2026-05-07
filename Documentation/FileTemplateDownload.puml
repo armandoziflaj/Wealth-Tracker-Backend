@@ -1,0 +1,23 @@
+@startuml
+autonumber
+
+Actor User
+Participant "Frontend (React)" as Frontend
+Participant "Web API (Controllers)" as API
+Participant "Business Logic (Services)" as BusinessLogic
+
+User -> Frontend: Requests to download a file template (e.g., Excel import template)
+Frontend -> API: GET /templates/{templateType}/download
+
+alt Successful Template Retrieval
+    API -> BusinessLogic: Call getTemplate service (templateType)
+    BusinessLogic -> BusinessLogic: (Optional) Generate or retrieve specific template file content
+    BusinessLogic --> API: Template file content (e.g., CSV, XLSX)
+    API --> Frontend: Template file content (as file download)
+    Frontend --> User: Initiates file download in browser
+else Template Not Found or Error
+    API --> Frontend: Error message (e.g., Template not found, Server error)
+    Frontend --> User: Displays Error message
+end
+
+@enduml

@@ -15,10 +15,12 @@ public class Transaction : CommonDataWithUser
 
     [Required] public TransactionType Type { get; set; }
 
-    [Required] public long CategoryId { get; set; }
-    [ForeignKey("CategoryId")] public virtual Category Category { get; set; } = null!;
+    public long? CategoryId { get; set; }
+    [ForeignKey("CategoryId")] 
+    public virtual Category Category { get; set; } = null!;
 
-    [MaxLength(1000)] public string? Notes { get; set; }
+    [MaxLength(1000)] 
+    public string? Notes { get; set; }
 
     public bool IsRecurring { get; set; }
 

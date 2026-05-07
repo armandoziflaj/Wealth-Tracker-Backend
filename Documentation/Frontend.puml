@@ -1,0 +1,76 @@
+@startuml
+!theme vibrant
+title WealthTracker UI
+
+package "Frontend Application" {
+
+  node "Entry Point" as EntryPoint {
+    [main.tsx]
+  }
+
+  [App.tsx] as App
+
+  package "Routing & Pages" as Pages {
+    folder "pages" {
+      [DashboardPage]
+      [TransactionsPage]
+      [SettingsPage]
+    }
+  }
+
+  package "UI Components" as UI {
+    folder "components" {
+      [Button]
+      [Chart]
+      [Table]
+    }
+    folder "layouts" {
+      [MainLayout]
+    }
+  }
+
+  package "State & Logic" as Logic {
+    folder "context" {
+      [AuthContext]
+      [DataContext]
+    }
+    folder "hooks" {
+      [useAuthentication]
+      [useFetchData]
+    }
+  }
+
+  package "Data" as Data {
+    folder "api" {
+      [apiClient.ts]
+    }
+    folder "types" {
+      [Transaction.ts]
+      [User.ts]
+    }
+  }
+
+  package "Styling & Assets" as Assets {
+      [index.css]
+      folder "assets"
+  }
+}
+"[Backend API]" as Backend
+actor User
+node "Browser"
+
+User --> Browser
+Browser -> EntryPoint : "Loads index.html"
+
+EntryPoint --> App : "Renders App"
+App --> Pages : "Manages routes"
+Pages --> UI : "Uses layouts and components"
+UI --> Logic : "Uses hooks for state and actions"
+Logic --> Data : "Fetches data and uses types"
+Data --> Backend : "HTTP Requests"
+
+Assets .[hidden]. App
+UI ..> Assets : "Applies styles"
+
+
+@enduml

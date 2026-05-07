@@ -1,0 +1,25 @@
+@startuml
+autonumber
+
+Actor User
+Participant "Frontend (React)" as Frontend
+Participant "Web API (Controllers)" as API
+Participant "Business Logic (Services)" as BusinessLogic
+Database "PostgreSQL" as Database
+
+User -> Frontend: Opens Dashboard
+Frontend -> API: GET /dashboard/data (Auth Token)
+
+alt Successful Data Fetch
+    API -> BusinessLogic: Request dashboard data (e.g., recent transactions, account summaries)
+    BusinessLogic -> Database: Query various tables (e.g., Transactions, Accounts, Categories)
+    Database --> BusinessLogic: Raw dashboard data
+    BusinessLogic --> API: Processed dashboard data
+    API --> Frontend: Dashboard data (JSON)
+    Frontend --> User: Displays Dashboard with loaded data
+else Data Fetch Failed
+    API --> Frontend: Error message (e.g., Server error, No data)
+    Frontend --> User: Displays Error message or empty state
+end
+
+@enduml

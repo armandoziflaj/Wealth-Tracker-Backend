@@ -1,0 +1,51 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+left to right direction
+
+title Detailed Backend Request Flow
+
+actor "Client (React App)" as Client
+
+System_Boundary(c1, "WealthTracker Backend (ASP.NET Core)") {
+    Component(controller, "API Controller", "C#", "Receives HTTP requests, validates input, and orchestrates the response.")
+    Component(service, "Business Service", "C#", "Contains core business logic, data processing, and validation.")
+    Component(dbContext, "EF Core DbContext", "C#", "Manages database sessions, queries, and data persistence.")
+    database "PostgreSQL DB" as db {
+        storage "Tables" as tables
+    }
+}
+
+Client -> controller: 1. Sends HTTP Request
+
+note top of controller
+  - Validates JWT to get User ID.
+  - Passes necessary parameters.
+end note
+controller -> service: 2. Calls service method\n(e.g., GetAllAsync(userId))
+
+note top of service
+  - Contains the core business logic.
+  - Builds a query to fetch data.
+end note
+service -> dbContext: 3. Uses DbContext to query the database
+
+dbContext -> db: 4. Translates LINQ to SQL\nand executes query
+
+db --> dbContext: 5. Returns raw data\n(e.g., Transaction entities)
+
+dbContext --> service: 6. Returns EF Core entities
+
+note top of service
+  - Receives database models.
+  - Maps entities to a DTO (Data Transfer Object).
+  - (e.g., Transaction -> TransactionResponseDto)
+end note
+service --> controller: 7. Returns DTO with processed data
+
+note top of controller
+  - Wraps the DTO in a standardized `BaseResponse`.
+end note
+controller --> Client: 8. Sends HTTP Response\n(e.g., 200 OK with JSON body)
+
+@enduml

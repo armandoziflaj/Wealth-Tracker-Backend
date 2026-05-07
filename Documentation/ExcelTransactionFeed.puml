@@ -1,0 +1,29 @@
+@startuml
+autonumber
+
+Actor User
+Participant "Frontend (React)" as Frontend
+Participant "Web API (Controllers)" as API
+Participant "Business Logic (Services)" as BusinessLogic
+Database "PostgreSQL" as Database
+
+User -> Frontend: Uploads Excel file for ingestion
+Frontend -> API: POST /transactions/upload/excel (Excel File)
+
+alt Successful Upload and Processing
+    API -> BusinessLogic: Call ingestExcel service (Excel File)
+    BusinessLogic -> BusinessLogic: Parse Excel, extract transaction data
+    BusinessLogic -> BusinessLogic: Attempt automatic category resolution (e.g., based on rules, past transactions)
+    BusinessLogic -> Database: Database for each info needs (e.g category resolve)
+    Database -> BusinessLogic: Gets the info
+    BusinessLogic -> Database: Batch insert/update transactions (with resolved/suggested categories)
+    Database --> BusinessLogic: Success / Inserted/Updated transaction IDs
+    BusinessLogic --> API: Summary of ingested transactions
+    API --> Frontend: Summary / Transactions requiring manual review
+    Frontend --> User: Displays ingestion summary
+else Upload or Processing Failed
+    API --> Frontend: Error message (e.g., Invalid file format, Processing error)
+    Frontend --> User: Displays Error message
+end
+
+@enduml

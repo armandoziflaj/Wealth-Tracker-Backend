@@ -1,0 +1,81 @@
+@startuml
+autonumber
+title Category CRUD Operations
+
+actor User
+participant "Frontend (React)"
+participant "Web API (Controllers)"
+participant "Business Logic (Services)"
+database "PostgreSQL"
+
+== Create Category ==
+
+User -> "Frontend (React)": Enters new category details (name, type)
+"Frontend (React)" -> "Web API (Controllers)": POST /api/categories (CreateCategoryRequest)
+"Web API (Controllers)" -> "Business Logic (Services)": CreateCategory(categoryData, userId)
+"Business Logic (Services)" -> "PostgreSQL": Insert new category record
+alt Category created successfully
+    "PostgreSQL" --> "Business Logic (Services)": New category ID
+    "Business Logic (Services)" --> "Web API (Controllers)": Created Category Object
+    "Web API (Controllers)" --> "Frontend (React)": 201 Created (CategoryResponse)
+    "Frontend (React)" --> User: Confirmation, update UI
+else Error during creation (e.g., duplicate name)
+    "PostgreSQL" --> "Business Logic (Services)": Error
+    "Business Logic (Services)" --> "Web API (Controllers)": Error message
+    "Web API (Controllers)" --> "Frontend (React)": 400 Bad Request / 500 Internal Server Error
+    "Frontend (React)" --> User: Display error message
+end
+
+== Read Categories ==
+
+User -> "Frontend (React)": Requests list of categories
+"Frontend (React)" -> "Web API (Controllers)": GET /api/categories (with Auth Token)
+"Web API (Controllers)" -> "Business Logic (Services)": GetCategories(userId)
+"Business Logic (Services)" -> "PostgreSQL": Query categories for the user
+alt Categories found
+    "PostgreSQL" --> "Business Logic (Services)": List of Category Records
+    "Business Logic (Services)" --> "Web API (Controllers)": List of Category Objects
+    "Web API (Controllers)" --> "Frontend (React)": 200 OK (List<CategoryResponse>)
+    "Frontend (React)" --> User: Display categories in a list
+else No categories found or error
+    "PostgreSQL" --> "Business Logic (Services)": Empty list or Error
+    "Business Logic (Services)" --> "Web API (Controllers)": Empty list or Error message
+    "Web API (Controllers)" --> "Frontend (React)": 200 OK (empty list) / 500 Internal Server Error
+    "Frontend (React)" --> User: Display "No categories" or error
+end
+
+== Update Category ==
+
+User -> "Frontend (React)": Edits an existing category
+"Frontend (React)" -> "Web API (Controllers)": PUT /api/categories/{id} (UpdateCategoryRequest)
+"Web API (Controllers)" -> "Business Logic (Services)": UpdateCategory(categoryId, updateData, userId)
+"Business Logic (Services)" -> "PostgreSQL": Update category record by ID
+alt Category updated successfully
+    "PostgreSQL" --> "Business Logic (Services)": Success confirmation
+    "Business Logic (Services)" --> "Web API (Controllers)": Updated Category Object
+    "Web API (Controllers)" --> "Frontend (React)": 200 OK (CategoryResponse)
+    "Frontend (React)" --> User: Confirmation, update UI
+else Category not found or error
+    "PostgreSQL" --> "Business Logic (Services)": Error
+    "Business Logic (Services)" --> "Web API (Controllers)": Error message
+    "Web API (Controllers)" --> "Frontend (React)": 404 Not Found / 400 Bad Request / 500 Internal Server Error
+    "Frontend (React)" --> User: Display error message
+end
+
+== Delete Category ==
+
+User -> "Frontend (React)": Initiates deletion of a category
+"Frontend (React)" -> "Web API (Controllers)": DELETE /api/categories/{id} (with Auth Token)
+"Web API (Controllers)" -> "Business Logic (Services)": DeleteCategory(categoryId, userId)
+"Business Logic (Services)" -> "PostgreSQL": Delete category record by ID
+alt Category deleted successfully
+    "PostgreSQL" --> "Business Logic (Services)": Success confirmation
+    "Business Logic (Services)" --> "Web API (Controllers)": 204 No Content
+    "Frontend (React)" --> User: Confirmation, remove from UI
+else Category not found or error (e.g., category has associated transactions)
+    "PostgreSQL" --> "Business Logic (Services)": Error
+    "Business Logic (Services)" --> "Web API (Controllers)": Error message
+    "Web API (Controllers)" --> "Frontend (React)": 404 Not Found / 409 Conflict / 500 Internal Server Error
+    "Frontend (React)" --> User: Display error message
+end
+@enduml

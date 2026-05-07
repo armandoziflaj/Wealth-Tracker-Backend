@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WealthTracker.Models;
 using WealthTracker.Requests;
+using WealthTracker.Responses;
 using WealthTracker.Services;
 
 namespace WealthTracker.Controllers;
@@ -55,7 +55,14 @@ public class TransactionController(ITransactionService transactionService) : Bas
         
         var result = await transactionService.Filter(userId, filters, cancellationToken);
         
-        return Success(result);
+        var response = PaginatedResponse<TransactionResponseDto>.Success(
+            result.Items, 
+            result.TotalCount, 
+            filters.PageNumber, 
+            filters.PageSize
+        );
+        
+        return Ok(response);
     }
     
     [HttpGet("GetMonthlySummary")]

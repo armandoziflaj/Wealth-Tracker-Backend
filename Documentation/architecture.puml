@@ -1,0 +1,40 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+actor "User" as user
+Container(frontend, "Frontend", "React, TypeScript", "The client-side single-page application.")
+
+System_Boundary(c1, "WealthTracker API") {
+    Container_Boundary(api, "Web API") {
+        Component(auth_controller, "AuthController", "C#", "Manages user authentication.")
+        Component(file_controller, "FileController", "C#", "Manages file uploads and downloads.")
+        Component(category_controller, "CategoryController", "C#", "Manages expense/income categories.")
+        Component(transaction_controller, "TransactionController", "C#", "Manages financial transactions.")
+
+        Component(auth_service, "AuthService", "C#", "Handles authentication logic.")
+        Component(file_service, "FileService", "C#", "Handles file processing logic.")
+        Component(category_service, "CategoryService", "C#", "Handles category management logic.")
+        Component(transaction_service, "TransactionService", "C#", "Handles transaction management logic.")
+    }
+    Container(worker, "Recurring Transaction Worker", "C#", "A background service that processes recurring transactions.")
+    ContainerDb(db, "Database", "PostgreSQL", "Stores user data, transactions, categories, etc.")
+}
+
+Rel(user, frontend, "Uses", "HTTPS")
+Rel(frontend, auth_controller, "Uses", "HTTPS")
+Rel(frontend, file_controller, "Uses", "HTTPS")
+Rel(frontend, category_controller, "Uses", "HTTPS")
+Rel(frontend, transaction_controller, "Uses", "HTTPS")
+
+Rel(auth_controller, auth_service, "Uses")
+Rel(file_controller, file_service, "Uses")
+Rel(category_controller, category_service, "Uses")
+Rel(transaction_controller, transaction_service, "Uses")
+
+Rel(auth_service, db, "Reads/Writes")
+Rel(file_service, db, "Reads/Writes")
+Rel(category_service, db, "Reads/Writes")
+Rel(transaction_service, db, "Reads/Writes")
+Rel(worker, db, "Reads/Writes")
+
+@enduml

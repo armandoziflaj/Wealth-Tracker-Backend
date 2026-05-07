@@ -1,0 +1,31 @@
+@startuml
+autonumber
+
+Participant "Scheduler (e.g., Cron, Task Scheduler)" as Scheduler
+Participant "Business Logic (Services)" as BusinessLogic
+Database "PostgreSQL" as Database
+
+Scheduler -> BusinessLogic: Triggers "Process Recurring Transactions" job
+
+alt Successful Processing
+    BusinessLogic -> Database: Query for all active recurring transaction definitions
+    Database --> BusinessLogic: List of recurring transactions
+    loop For each recurring transaction
+        BusinessLogic -> BusinessLogic: Check if transaction is due
+        alt Transaction is due
+            BusinessLogic -> BusinessLogic: Generate new transaction details
+            BusinessLogic -> Database: Insert new transaction record
+            Database --> BusinessLogic: New transaction ID
+            BusinessLogic -> Database: Update recurring transaction's last_executed_date / next_due_date
+            Database --> BusinessLogic: Success
+        else Transaction not due
+            BusinessLogic -> BusinessLogic: Skip
+        end
+    end
+    BusinessLogic --> Scheduler: Job completed successfully
+else Processing Failed
+    BusinessLogic -> BusinessLogic: Log error
+    BusinessLogic --> Scheduler: Job completed with errors
+end
+
+@enduml

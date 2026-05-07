@@ -39,13 +39,13 @@ public class CategoryService (ApplicationDbContext context) : ICategoryService
     
     public async Task<Category> CreateAsync(long userId, CategoryCreateDto dto, CancellationToken cancellationToken = default)
     {
-        var exists = await context.Categories
+        /*var exists = await context.Categories
             .AnyAsync(c => c.UserId == userId && c.Name == dto.Name, cancellationToken);
 
         if (exists)
         {
             throw new InvalidOperationException($"A category with the name '{dto.Name}' already exists.");
-        }
+        }*/
 
         var colorExists = await context.Categories
             .AnyAsync(c => c.UserId == userId && c.Color == dto.Color, cancellationToken);
@@ -79,7 +79,7 @@ public class CategoryService (ApplicationDbContext context) : ICategoryService
         if (!string.IsNullOrEmpty(dto.Color) && dto.Color != category.Color &&
             await context.Categories.AnyAsync(c => c.UserId == userId && c.Color == dto.Color, cancellationToken))
         {
-            throw new Exception("Color already in use.");
+            throw new Exception("Cannot update category. Color already in use.");
         }
 
         category.Name = dto.Name;

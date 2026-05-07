@@ -11,7 +11,7 @@ public interface ITransactionService
     Task<Transaction?> UpdateAsync(long userId,TransactionUpdateDto transaction, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(long userId,long id, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<TransactionResponseDto>> Filter(long userId, TransactionFilterDto filter, CancellationToken cancellationToken = default);
+    Task<(List<TransactionResponseDto> Items, long TotalCount)> Filter(long userId, TransactionFilterDto filter, CancellationToken cancellationToken = default);
     Task<DashboardDataDto> GetCategorySummary(long userId, CancellationToken cancellationToken = default);
     Task<IEnumerable<MonthlySummaryDto>> GetMonthlySummary(long userId, CancellationToken cancellationToken = default);
 

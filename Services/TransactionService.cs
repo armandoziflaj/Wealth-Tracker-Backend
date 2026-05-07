@@ -8,41 +8,44 @@ namespace WealthTracker.Services;
 
 public class TransactionService(ApplicationDbContext context) : ITransactionService
 {
-    public async Task<IEnumerable<TransactionResponseDto>> GetAllAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TransactionResponseDto>> GetAllAsync(long userId,
+        CancellationToken cancellationToken = default)
     {
         return await context.Transactions
-                            .Include(t => t.Category)
-                            .Where(t => t.UserId == userId)
-                            .Select(t => new TransactionResponseDto
-                            {
-                                Id = t.Id,
-                                Amount = t.Amount,
-                                Description = t.Description,
-                                TransactionDate = t.TransactionDate,
-                                Type = (int)t.Type,
-                                CategoryId = t.CategoryId,
-                                CategoryName = t.Category.Name,
-                                CategoryColor = t.Category.Color,
-                                Notes = t.Notes,
-                                IsRecurring = t.IsRecurring
-                            })
-                            .ToListAsync(cancellationToken);
+            .Include(t => t.Category)
+            .Where(t => t.UserId == userId)
+            .Select(t => new TransactionResponseDto
+            {
+                Id = t.Id,
+                Amount = t.Amount,
+                Description = t.Description,
+                TransactionDate = t.TransactionDate,
+                Type = t.Type,
+                CategoryId = t.CategoryId,
+                CategoryName = t.Category.Name,
+                CategoryColor = t.Category.Color,
+                Notes = t.Notes,
+                IsRecurring = t.IsRecurring,
+                RecursionTime = t.RecursionTime
+            })
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<Transaction?> CreateAsync(long userId, TransactionCreateDto transaction, CancellationToken cancellationToken = default)
+    public async Task<Transaction?> CreateAsync(long userId, TransactionCreateDto transaction,
+        CancellationToken cancellationToken = default)
     {
         var newTransaction = new Transaction()
-            {
-                Amount = transaction.Amount,
-                Description = transaction.Description,
-                TransactionDate = DateTime.SpecifyKind(transaction.TransactionDate, DateTimeKind.Utc),      
-                Type = transaction.Type,
-                CategoryId = transaction.CategoryId,
-                IsRecurring = transaction.IsRecurring,
-                Notes = transaction.Notes,
-                UserId = userId,
-                RecursionTime = transaction.RecursionTime
-            };
+        {
+            Amount = transaction.Amount,
+            Description = transaction.Description,
+            TransactionDate = DateTime.SpecifyKind(transaction.TransactionDate, DateTimeKind.Utc),
+            Type = transaction.Type,
+            CategoryId = transaction.CategoryId == 0 ? null : transaction.CategoryId,
+            IsRecurring = transaction.IsRecurring,
+            Notes = transaction.Notes,
+            UserId = userId,
+            RecursionTime = transaction.RecursionTime,
+        };
         newTransaction.SetupNextOccurrence();
         try
         {
@@ -52,10 +55,12 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
         }
         catch (Exception)
         {
-            return null;
+            throw new InvalidOperationException("Transaction can not be created");
         }
     }
-    public async Task<Transaction?> UpdateAsync(long userId, TransactionUpdateDto dto, CancellationToken cancellationToken = default)
+
+    public async Task<Transaction?> UpdateAsync(long userId, TransactionUpdateDto dto,
+        CancellationToken cancellationToken = default)
     {
         var existingTransaction = await context.Transactions
             .FirstOrDefaultAsync(t => t.Id == dto.Id && t.UserId == userId, cancellationToken);
@@ -66,13 +71,13 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
         existingTransaction.Description = dto.Description;
         existingTransaction.TransactionDate = DateTime.SpecifyKind(dto.TransactionDate, DateTimeKind.Utc);
         existingTransaction.Type = dto.Type;
-        existingTransaction.CategoryId = dto.CategoryId;
+        existingTransaction.CategoryId = dto.CategoryId == 0 ? null : dto.CategoryId;
         existingTransaction.Notes = dto.Notes;
         existingTransaction.IsRecurring = dto.IsRecurring;
-        existingTransaction.UpdatedOn = DateTime.UtcNow; 
+        existingTransaction.UpdatedOn = DateTime.UtcNow;
         existingTransaction.RecursionTime = dto.RecursionTime;
         existingTransaction.SetupNextOccurrence();
-        
+
         try
         {
             await context.SaveChangesAsync(cancellationToken);
@@ -80,7 +85,7 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
         }
         catch (Exception)
         {
-            return null;
+            throw new InvalidOperationException("Transaction can not be updated");
         }
     }
 
@@ -90,7 +95,7 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
             .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, cancellationToken);
 
         if (existingTransaction == null) return false;
-        
+
         try
         {
             context.Transactions.Remove(existingTransaction);
@@ -102,32 +107,41 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
             return false;
         }
     }
-    
-    public async Task<IEnumerable<TransactionResponseDto>> Filter(long userId, TransactionFilterDto filter, CancellationToken cancellationToken = default)
+
+    public async Task<(List<TransactionResponseDto> Items, long TotalCount)> Filter(long userId,
+        TransactionFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = context.Transactions.Where(t => t.UserId == userId);
 
-        query = ApplyFilters(query, filter); 
+        query = ApplyFilters(query, filter);
 
-        return await query.OrderByDescending(t => t.TransactionDate)
-                          .Select(t => new TransactionResponseDto
-                          {
-                            Id = t.Id,
-                            Amount = t.Amount,
-                            Description = t.Description,
-                            TransactionDate = t.TransactionDate,
-                            Type = (int)t.Type,
-                            CategoryId = t.CategoryId,
-                            CategoryName = t.Category.Name,
-                            CategoryColor = t.Category.Color,
-                            Notes = t.Notes,
-                            IsRecurring = t.IsRecurring
-                          })
-                          .AsNoTracking()
-                          .ToListAsync(cancellationToken);
+        var totalCount = await query.CountAsync(cancellationToken: cancellationToken);
+
+        var data = await query.OrderByDescending(t => t.TransactionDate)
+            .Select(t => new TransactionResponseDto
+            {
+                Id = t.Id,
+                Amount = t.Amount,
+                Description = t.Description,
+                TransactionDate = t.TransactionDate,
+                Type = t.Type,
+                CategoryId = t.CategoryId,
+                CategoryName = t.Category.Name,
+                CategoryColor = t.Category.Color,
+                Notes = t.Notes,
+                IsRecurring = t.IsRecurring,
+                RecursionTime = t.RecursionTime
+            })
+            .AsNoTracking()
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .ToListAsync(cancellationToken);
+        
+        return (data, totalCount);
     }
-    
-    public async Task<IEnumerable<MonthlySummaryDto>> GetMonthlySummary(long userId, CancellationToken cancellationToken = default)
+
+    public async Task<IEnumerable<MonthlySummaryDto>> GetMonthlySummary(long userId,
+        CancellationToken cancellationToken = default)
     {
         var monthlyData = await context.Transactions
             .Where(t => t.UserId == userId && t.TransactionDate.Year == DateTime.Now.Year)
@@ -139,11 +153,14 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
                 Total = g.Sum(t => t.Amount)
             })
             .ToListAsync(cancellationToken);
-        
-        return Enumerable.Range(1, 12).Select(m => {
-            var monthIncomes = monthlyData.Where(d => d.Month == m && d.Type == TransactionType.Income).Sum(d => d.Total);
-            var monthExpenses = monthlyData.Where(d => d.Month == m && d.Type == TransactionType.Expense).Sum(d => d.Total);
-        
+
+        return Enumerable.Range(1, 12).Select(m =>
+        {
+            var monthIncomes = monthlyData.Where(d => d.Month == m && d.Type == TransactionType.Income)
+                .Sum(d => d.Total);
+            var monthExpenses = monthlyData.Where(d => d.Month == m && d.Type == TransactionType.Expense)
+                .Sum(d => d.Total);
+
             return new MonthlySummaryDto
             {
                 Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m),
@@ -155,15 +172,15 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
     }
 
     public async Task<DashboardDataDto> GetCategorySummary(
-        long userId, 
+        long userId,
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.Now;
 
         var transactions = await context.Transactions
             .Include(t => t.Category)
-            .Where(t => t.UserId == userId && 
-                        t.TransactionDate.Month == now.Month && 
+            .Where(t => t.UserId == userId &&
+                        t.TransactionDate.Month == now.Month &&
                         t.TransactionDate.Year == now.Year)
             .ToListAsync(cancellationToken);
 
@@ -176,9 +193,9 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
                 Fill = g.Key == TransactionType.Expense ? "#FF4D4D" : "#C6FF5E"
             })
             .ToList();
-        
+
         var byExpenseCategory = transactions
-            .Where(t => t.Type == TransactionType.Expense)
+            .Where(t => t.Type == TransactionType.Expense && t.CategoryId.HasValue)
             .GroupBy(t => new { t.Category.Name, t.Category.Color })
             .Select(g => new CategorySummaryDto
             {
@@ -190,13 +207,13 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
             .ToList();
 
         var byIncomeCategory = transactions
-            .Where(t => t.Type == TransactionType.Income) 
+            .Where(t => t.Type == TransactionType.Income && t.CategoryId.HasValue)
             .GroupBy(t => new { t.Category.Name, t.Category.Color })
             .Select(g => new CategorySummaryDto
             {
                 Name = g.Key.Name,
                 Value = Math.Round(g.Sum(t => t.Amount), 2),
-                Fill = g.Key.Color ?? "#C6FF5E" 
+                Fill = g.Key.Color ?? "#C6FF5E"
             })
             .OrderByDescending(x => x.Value)
             .ToList();
@@ -209,19 +226,19 @@ public class TransactionService(ApplicationDbContext context) : ITransactionServ
         };
     }
 
-private IQueryable<Transaction> ApplyFilters(IQueryable<Transaction> query, TransactionFilterDto filter)
-{
-    if (filter.FromDate.HasValue) 
-        query = query.Where(t => t.TransactionDate >= filter.FromDate.Value);
-    if (filter.ToDate.HasValue)
-        query = query.Where(t => t.TransactionDate <= filter.ToDate.Value);
-    if (filter.CategoryId.HasValue) 
-        query = query.Where(t => t.CategoryId == filter.CategoryId.Value);
+    private IQueryable<Transaction> ApplyFilters(IQueryable<Transaction> query, TransactionFilterDto filter)
+    {
+        if (filter.FromDate.HasValue)
+            query = query.Where(t => t.TransactionDate >= filter.FromDate.Value);
+        if (filter.ToDate.HasValue)
+            query = query.Where(t => t.TransactionDate <= filter.ToDate.Value);
+        if (filter.CategoryId.HasValue)
+            query = query.Where(t => t.CategoryId == filter.CategoryId.Value);
 
-    if (!string.IsNullOrEmpty(filter.SearchTerm))
-        query = query.Where(t => t.Description.Contains(filter.SearchTerm)
-                                 || (t.Notes != null && t.Notes.Contains(filter.SearchTerm)));
-    
-    return query;
-}
+        if (!string.IsNullOrEmpty(filter.SearchTerm))
+            query = query.Where(t => t.Description.Contains(filter.SearchTerm)
+                                     || (t.Notes != null && t.Notes.Contains(filter.SearchTerm)));
+
+        return query;
+    }
 }
